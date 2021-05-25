@@ -98,6 +98,8 @@ class Orderbook:
         except:
             print(self.bids)
             print(self.asks)
+            self.save_history()
+            
         return self.bids[0][0][0], self.asks[0][0][0]
     
     def spread(self):

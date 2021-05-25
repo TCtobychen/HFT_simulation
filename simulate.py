@@ -18,6 +18,8 @@ parser.add_argument('--marketmaker-volume', type=float, default=6,
                     help='market maker volume')
 parser.add_argument('--momentum-volume', type=float,default=6,
                     help='momentum volume')
+parser.add_argument('--fake-volume', type=int,default=20,
+                    help='multiplier of 10000 as spoofer fake order volume')
 parser.add_argument('--model-path', type=str, default='',
                     help='path to the hft model')
 parser.add_argument('--thres', type=int, default=5,
@@ -65,7 +67,7 @@ def get_info(mms, thres=args.thres):
 
 
 def simulate(N=50000, lf_ratio = 0.1, mm_ratio = 0.1, marketmaker_volume=50, momentum_volume=50, hft_ratio=0.5, model_path=''):
-    tag = f'{args.slice_num}_{args.have_hft}_{args.have_spoofer}'
+    tag = f'{args.slice_num}_{args.have_hft}_{args.have_spoofer}_{args.fake_volume}'
     ob = Orderbook(1000, 1, tag)
     market_makers, hfts, retailers, mm_retailers, spoofers = [], [], [], [], []
     print(f'Loading model from path {model_path}')
@@ -78,7 +80,7 @@ def simulate(N=50000, lf_ratio = 0.1, mm_ratio = 0.1, marketmaker_volume=50, mom
     for i in range(n_hft):
         hfts.append(HFT(40, 0, i, model))
     for i in range(n_spoofer):
-        spoofers.append(Spoofer(50, 100000,args.flat_time, args.fake_level, i))
+        spoofers.append(Spoofer(50, 500*args.fake_volume,args.flat_time, args.fake_level, i))
     for i in range(n_randomretailer):
         retailers.append(RandomRetailer(100, 1, i))
     for i in range(n_maretailer):
@@ -154,7 +156,7 @@ def simulate(N=50000, lf_ratio = 0.1, mm_ratio = 0.1, marketmaker_volume=50, mom
     #plt.scatter(np.array(range(len(prices)))[spoofs!=0],prices[spoofs!=0], marker='o',c='r',s=0.1)
     plt.savefig('price_'+tag,dpi=1000)
     plt.close()
-    #ob.show()
+    ob.show()
     sp_pnls, mm_pnls, hft_pnls, rr_pnls, mr_pnls = [], [], [], [], []
     sp_volumes, mm_volumes, hft_volumes, rr_volumes, mr_volumes = [], [], [], [], []
     poss = []
@@ -188,6 +190,8 @@ def simulate(N=50000, lf_ratio = 0.1, mm_ratio = 0.1, marketmaker_volume=50, mom
         mr_volumes.append(mr.trading_volume)
         print(mr.position, mr.cash)
         poss.append(mr.position)
+    for mmr in mm_retailers:
+        poss.append(mmr.position)
     print(np.mean(mm_pnls), mm_pnls)
     print(np.mean(hft_pnls), hft_pnls)
     print(np.mean(sp_pnls), sp_pnls)
@@ -203,4 +207,4 @@ def simulate(N=50000, lf_ratio = 0.1, mm_ratio = 0.1, marketmaker_volume=50, mom
     print(np.mean(mr_pnls/mr_volumes), mr_pnls/mr_volumes)
     print(np.sum(poss))
 
-simulate(50000, args.lf_ratio/10, args.mm_ratio/10, args.marketmaker_volume*10, args.momentum_volume*10, 0.1, args.model_path) 
+simulate(10000, args.lf_ratio/10, args.mm_ratio/10, args.marketmaker_volume*10, args.momentum_volume*10, 0.1, args.model_path) 
